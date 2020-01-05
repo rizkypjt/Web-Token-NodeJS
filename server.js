@@ -26,9 +26,40 @@ mongoose.connect(config.database);
 app.set('secretKey', config.secret);
 app.use(cors());
 
+//=====Router Api
+
+router.post('/login', function(req, res){
+    User.findOne({
+        email: req.body.email
+    }, function(err, user){
+        if(err) throw err;
+
+        if(!user){
+            res.json({succes: false, message: "User tidak ada di database"})
+        }else {
+            //harusnya passwordnya hash
+            if(user.password != req.body.password){
+                res.json({succes: false, message: "Password user salah"})
+            }else{
+                //membuat token
+                var token = jwt.sign(user, app.get('secretKey'),{
+                    expiresIn: "24h"
+                });
+
+                //ngirim balik token
+                res.json({
+                    succes : true,
+                    message : 'token berhasil',
+                    token : token 
+                });
+            }
+        }
+    });
+});
+
 router.get('/', function(req, res){
     res.send('ini di route Home!');
-})
+});
 
 router.get('/users', function(req, res){
     User.find({}, function(err, users){
