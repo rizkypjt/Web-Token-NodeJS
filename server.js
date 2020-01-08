@@ -1,73 +1,81 @@
-//==== Set Up
-
+//= === Set Up
 var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
-
-mongoose.connect('mongodb:://localhost/apiusers', {
-    useMongoClient: true
-})
-
 var jwt = require('jsonwebtoken');
 var app = express();
 var router = express.Router();
 var cors = require('cors');
 
-//==== set up Local
 
-var config = require('./App/config');
-var User = require('./App/Models/user');
-var port = 4000;
+//= === set up Local
 
-app.use(bodyParser.urlencoded({extended:false}));
-app.use(bodyParser.json());
+var config = require('./App/config')
+var User = require('./App/Models/user')
+var port = 4000
 
-mongoose.connect(config.database);
-app.set('secretKey', config.secret);
-app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
-//=====Router Api
+// mongoose.connect('mongodb:://localhost/apiusers', {
+//     useMongoClient: true
+// })
+// mongoose.connect(config.database, {
+//   // useMongoClient: true
+//   useNewUrlParser: true
+// });
 
-router.post('/login', function(req, res){
-    User.findOne({
-        email: req.body.email
-    }, function(err, user){
-        if(err) throw err;
-
-        if(!user){
-            res.json({succes: false, message: "User tidak ada di database"})
-        }else {
-            //harusnya passwordnya hash
-            if(user.password != req.body.password){
-                res.json({succes: false, message: "Password user salah"})
-            }else{
-                //membuat token
-                var token = jwt.sign(user, app.get('secretKey'),{
-                    expiresIn: "24h"
-                });
-
-                //ngirim balik token
-                res.json({
-                    succes : true,
-                    message : 'token berhasil',
-                    token : token 
-                });
-            }
-        }
-    });
+mongoose.connect("mongodb://127.0.0.1/admin", {
+  useUnifiedTopology: true, 
+  useNewUrlParser: true, 
+  useCreateIndex: true 
 });
 
-router.get('/', function(req, res){
-    res.send('ini di route Home!');
-});
+app.set('secretKey', config.secret)
+app.use(cors())
 
-router.get('/users', function(req, res){
-    User.find({}, function(err, users){
-        res.json(users);
-    });
-});
+//= ============= Router API
+router.post('/login', function (req, res) {
+  User.findOne({
+    email: req.body.email
+  }, function (err, user) {
+    if (err) throw err
 
-//prefix /api
-app.use('/api', router);
+    if (!user) {
+      res.json({ succes: false, message: 'User tidak ada di database' })
+    } else {
+      // harusnya passwordnya hash
+      if (user.password !== req.body.password) {
+        res.json({ succes: false, message: 'password user salah!' })
+      } else {
+        // membuat token
+        const token = jwt.sign({user}, app.get('secretKey'), {
+          expiresIn: 5000
+        })
 
-app.listen(4000);
+
+        // ngirim balik token
+        res.json({
+          succes: true,
+          message: 'token berhasil didapatkan!',
+          token: token
+        })
+      }
+    }
+  })
+})
+
+router.get('/', function (req, res) {
+  res.send('ini di route Home!')
+})
+
+router.get('/users', function (req, res) {
+  User.find({}, function (err, users) {
+    res.json(users)
+  })
+})
+
+// prefix /api
+app.use('/api', router)
+
+app.listen(4000)
